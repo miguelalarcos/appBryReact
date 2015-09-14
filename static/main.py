@@ -65,15 +65,7 @@ document <= button_send
 
 
 def send_data():
-    ws.send(json.dumps({'id': '0', 'x': random.randint(0, 10)}))
+    ws.send(json.dumps({'id': random.choice(['0', '1', '2']), '__collection__': 'A', 'x': random.randint(0, 10)}))
 
 button_send.bind('click', send_data)
-
-"""
-div1 = html.DIV(Id='container')
-document <= div1
-div1.text = 'hello world :)'
-div2 = html.DIV(Id='0')
-div2.text = 'before'
-Selector('#container').get().before(div2)
-"""
+ws.send(json.dumps({'x': 0, 'y': 10, '__filter__': '0'}))

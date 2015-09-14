@@ -1,5 +1,7 @@
 def pass_filter(filter, model):
     for key, value in filter.items():
+        if key == '__collection__':
+            continue
         if type(value) == int or type(value) == str:
             if model[key] != value:
                 return False

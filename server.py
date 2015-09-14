@@ -5,9 +5,30 @@ import json
 
 q = Queue()
 q_out = Queue()
-filters = []
 
-mongo_model = {'id': '0', 'x': 50}
+filters = {}
+filters['0'] = lambda x, y: {'__collection__': 'A', 'x': {"$gt": x, "$lt": y}}
+
+mongo_model = {}
+mongo_model['0'] = {'id': '0', 'x': 50}
+mongo_model['1'] = {'id': '1', 'x': 51}
+mongo_model['2'] = {'id': '2', 'x': 52}
+
+
+class Client(object):
+    clients = []
+
+    def __init__(self, socket):
+        self.socket = socket
+        self.filters = {}
+        Client.clients.append(self)
+
+    def add_filter(self, name, filter):
+        self.filters[name] = filter
+
+    @classmethod
+    def remove_client(cls, client):
+        cls.clients.remove(client)
 
 @gen.coroutine
 def sender():
@@ -23,25 +44,37 @@ def sender():
 def consumer():
     global mongo_model
     while True:
-        model = yield q.get()
-        print 'get model id:', model['id']
-        model_before = mongo_model
-        print 'update model'
-        mongo_model = model
-        for client, filt in filters:
-            print('filter:', filt)
-            before = pass_filter(filt, model_before)
-            print 'before:', before
+        item = yield q.get()
+        client = item.pop('__client__')
+        if '__filter__' in item.keys():
+            name = item.pop('__filter__')
+            client.add_filter(name, filters[name](**item))
+        else:
+            collection = item.pop('__collection__')
+            model = item
+            print 'get model id:', model['id']
+            model_before = mongo_model[model['id']]
+            print 'update model'
+            mongo_model[model['id']] = model
+            for client in Client.clients:
+                for filt in client.filters:
+                    print('filter:', filt)
+                    if filt['__collection__'] != collection:
+                        continue
+                    before = pass_filter(filt, model_before)
+                    print 'before:', before
 
-            if not before:
-                after = pass_filter(filt, model)
-                print 'after:', after
-                if after:
-                    print 'send', client, model
-                    yield q_out.put((client, model))
-            else:
-                print 'send', client, model
-                yield q_out.put((client, model))
+                    if not before:
+                        after = pass_filter(filt, model)
+                        print 'after:', after
+                        if after:
+                            print 'send', client, model
+                            yield q_out.put((client, model))
+                            break
+                    else:
+                        print 'send', client, model
+                        yield q_out.put((client, model))
+                        break
         q.task_done()
 
 
@@ -52,12 +85,17 @@ class MainHandler(web.RequestHandler):
 
 class SocketHandler(websocket.WebSocketHandler):
     def open(self):
-        filters.append((self, {'x': {"$gt": 7, "$lt": 10}}))
+        Client(self)
+
+    def close(self):
+        Client.remove_client(self)
 
     @gen.coroutine
     def on_message(self, message):
         print('***', message)
-        yield q.put(json.loads(message))
+        item = json.loads(message)
+        item['__client__'] = self
+        yield q.put(item)
 
 app = web.Application([
     (r"/", MainHandler),
