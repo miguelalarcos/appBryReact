@@ -3,6 +3,7 @@ import json
 import random
 from reactive import Model, execute
 from controller import Controller
+from filters import filters
 
 DIV = html.DIV
 
@@ -22,7 +23,10 @@ class A(Model):
         A.objects[id] = self
 
 
-filter = {'x': {"$gt": 7, "$lt": 10}}
+collections = {}
+collections['A'] = A
+filter = filters['0'](x=5, y=10)
+#filter = {'x': {"$gt": 5, "$lt": 10}}
 
 
 def hello(model, node):
@@ -37,22 +41,24 @@ document <= container
 def on_message(evt):
     result = evt.data
     data = json.loads(result)
+    collection = data.pop('__collection__')
+    klass = collections[collection]
     print 'buscamos si ya tenemos el objeto con id', data['id']
     try:
-        model = A.objects[data['id']]
+        model = klass.objects[data['id']]
         print 'encontrado'
     except KeyError:
-        model = A(**data)
+        model = klass(**data)
         print 'nuevo'
 
     if all([c.test(model, data) for c in controllers]):
         print 'eliminamos obj de cache'
-        del A.objects[model.id]
+        del klass.objects[model.id]
     else:
         for k, v in data.items():
             setattr(model, k, v)
 
-    print A.objects
+    print klass.objects
     print 'consume'
     consume()
 
@@ -68,4 +74,4 @@ def send_data():
     ws.send(json.dumps({'id': random.choice(['0', '1', '2']), '__collection__': 'A', 'x': random.randint(0, 10)}))
 
 button_send.bind('click', send_data)
-ws.send(json.dumps({'x': 0, 'y': 10, '__filter__': '0'}))
+ws.send(json.dumps({'x': 5, 'y': 10, '__filter__': '0'}))

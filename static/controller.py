@@ -1,4 +1,4 @@
-from filter_mongo import pass_filter
+from lib.filter_mongo import pass_filter
 from reactive import reactive
 from browser import html
 from pyquery import Selector

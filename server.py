@@ -1,18 +1,16 @@
 from tornado import web, ioloop, websocket, gen
 from tornado.queues import Queue
-from filter_mongo import pass_filter
+from static.lib.filter_mongo import pass_filter
 import json
+from static.filters import filters
 
 q = Queue()
 q_out = Queue()
 
-filters = {}
-filters['0'] = lambda x, y: {'__collection__': 'A', 'x': {"$gt": x, "$lt": y}}
-
-mongo_model = {}
-mongo_model['0'] = {'id': '0', 'x': 50}
-mongo_model['1'] = {'id': '1', 'x': 51}
-mongo_model['2'] = {'id': '2', 'x': 52}
+mongo_model = {'A': {}}
+mongo_model['A']['0'] = {'id': '0', 'x': 50}
+mongo_model['A']['1'] = {'id': '1', 'x': 51}
+mongo_model['A']['2'] = {'id': '2', 'x': 52}
 
 
 class Client(object):
@@ -50,12 +48,13 @@ def consumer():
             name = item.pop('__filter__')
             client.add_filter(name, filters[name](**item))
         else:
-            collection = item.pop('__collection__')
+            #collection = item.pop('__collection__')
+            collection = item['__collection__']
             model = item
             print 'get model id:', model['id']
-            model_before = mongo_model[model['id']]
+            model_before = mongo_model[collection][model['id']]
             print 'update model'
-            mongo_model[model['id']] = model
+            mongo_model[collection][model['id']] = model
             for client in Client.clients:
                 for filt in client.filters:
                     print('filter:', filt)
