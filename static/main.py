@@ -1,34 +1,28 @@
-from browser import document, html, websocket
+from browser import document, html, window # , websocket
+import javascript
+
+WebSocket = javascript.JSConstructor(window.WebSocket)
+
 import json
+print(dir(json))
 import random
-from reactive import Model, execute
+from reactive import Model, consume
 from controller import Controller
-from filters import filters
+from filters.filters import filters
 
 DIV = html.DIV
 
 
-def consume():
-    while execute:
-        call = execute.pop()
-        call()
-
-
 class A(Model):
     objects = {}
-
     def __init__(self, id, x):
-        if id is None:
-            id = str(random.random())
         super(A, self).__init__(id)
         self.x = x
-        A.objects[id] = self
 
 
 collections = {}
 collections['A'] = A
 filter = filters['0'](x=5, y=10)
-#filter = {'x': {"$gt": 5, "$lt": 10}}
 
 
 def hello(model, node):
@@ -41,39 +35,51 @@ document <= container
 
 
 def on_message(evt):
-    result = evt.data
-    data = json.loads(result)
-    collection = data.pop('__collection__')
-    klass = collections[collection]
-    print 'buscamos si ya tenemos el objeto con id', data['id']
     try:
-        model = klass.objects[data['id']]
-        print 'encontrado'
-    except KeyError:
-        model = klass(**data)
-        print 'nuevo'
+        result = evt.data
+        print('raw', result)
+        data = json.loads(result)
+        collection = data.pop('__collection__')
+        klass = collections[collection]
+        print('buscamos si ya tenemos el objeto con id', data['id'])
+        try:
+            model = klass.objects[data['id']]
+            print('encontrado')
+        except KeyError:
+            print('nuevo')
+            model = klass(**data)
 
-    if all([c.test(model, data) for c in controllers]):
-        print 'eliminamos obj de cache'
-        del klass.objects[model.id]
-    else:
-        for k, v in data.items():
-            setattr(model, k, v)
+        if all([c.test(model, data) for c in controllers]):
+            print('eliminamos obj de cache')
+            del klass.objects[model.id]
+        else:
+            for k, v in data.items():
+                setattr(model, k, v)
 
-    print klass.objects
-    print 'consume'
-    consume()
+        print('consume')
+        consume()
+    except Exception as e:
+        print ('error', e)
 
-ws = websocket.WebSocket("ws://127.0.0.1:8888/ws")
-ws.bind('message',on_message)
+
+ws = WebSocket("ws://127.0.0.1:8888/ws")
+ws.bind('message', on_message)
 
 button_send = html.BUTTON()
 button_send.text = 'send random data'
 document <= button_send
 
 
+sent_initial_data = False
 def send_data():
+    global sent_initial_data
+    if not sent_initial_data:
+        ws.send(json.dumps({'x': 5, 'y': 10, '__filter__': '0'}))
+        ws.send(json.dumps({'id': '0', '__collection__': 'A', 'x': random.randint(0, 10)}))
+        ws.send(json.dumps({'id': '1', '__collection__': 'A', 'x': random.randint(0, 10)}))
+        ws.send(json.dumps({'id': '2', '__collection__': 'A', 'x': random.randint(0, 10)}))
+        sent_initial_data = True
     ws.send(json.dumps({'id': random.choice(['0', '1', '2']), '__collection__': 'A', 'x': random.randint(0, 10)}))
 
 button_send.bind('click', send_data)
-ws.send(json.dumps({'x': 5, 'y': 10, '__filter__': '0'}))
+

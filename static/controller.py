@@ -22,23 +22,23 @@ class Controller(object):
 
     def test(self, model, raw):
         if model.id in [x.id for x in self.lista]:
-            print 'esta dentro'
+            print('esta dentro')
             if pass_filter(self.filter, raw):
-                print 'y permance dentro', 'MODIFY'
+                print('y permance dentro', 'MODIFY')
                 self.modify(model)
                 return False
             else:
-                print 'y sale', 'OUT'
+                print('y sale', 'OUT')
                 self.out(model)
                 return True
         else:
-            print 'esta fuera'
+            print('esta fuera')
             if pass_filter(self.filter, raw):
-                print 'y entra', 'NEW'
+                print('y entra', 'NEW')
                 self.new(model)
                 return False
             else:
-                print 'y permanece fuera'
+                print('y permanece fuera')
                 return False
 
     def new(self, model):
@@ -70,9 +70,9 @@ class Controller(object):
         del self.lista[index]
         tupla = self.indexInList(model)
         if index == tupla[0]:
-            print 'ocupa misma posicion'
+            print('ocupa misma posicion')
         else:
-            print 'move to ', model, tupla
+            print('move to ', model, tupla)
             #
             node = Selector('#'+str(model.id), self.node).get()
             self.node.remove(node)

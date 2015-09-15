@@ -1,7 +1,15 @@
+import random
+
 current_name = None
 current_call = None
 execute = []
 map_ = {}
+
+
+def consume():
+    while execute:
+        call = execute.pop()
+        call()
 
 
 def reactive(model, func, node=None):
@@ -20,8 +28,13 @@ def reactive(model, func, node=None):
 # base class Model. __getattr__ makes (marks) the current reactive function to be called when the attribute is set
 class Model(object):
     def __init__(self, id):
+        if id is None:
+            id = str(random.random())
         self.__dict__['_map'] = []
         self.__dict__['id'] = id
+        #if not hasattr(self.__class__, 'objects'):
+        #    self.__class__.objects = {}
+        self.__class__.objects[id] = self
 
     def reset(self, name):
         print ('reset', name)
