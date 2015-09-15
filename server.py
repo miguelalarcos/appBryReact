@@ -53,17 +53,27 @@ def consumer():
             model = item
             print 'get model id:', model['id']
             model_before = mongo_model[collection][model['id']]
-            print 'update model'
+            if '__deleted__' in model.keys():
+                deleted = True
+                print 'delete model'
+            else:
+                deleted = False
+                if '__new__' in model.keys():
+                    new = True
+                    print 'new model'
+                else:
+                    new = False
+                    print 'update model'
             mongo_model[collection][model['id']] = model
             for client in Client.clients:
                 for filt in client.filters:
                     print('filter:', filt)
                     if filt['__collection__'] != collection:
                         continue
-                    before = pass_filter(filt, model_before)
+                    before = (not new) and pass_filter(filt, model_before)
                     print 'before:', before
 
-                    if not before:
+                    if not before and not deleted:
                         after = pass_filter(filt, model)
                         print 'after:', after
                         if after:

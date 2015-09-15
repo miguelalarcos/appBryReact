@@ -18,6 +18,8 @@ class A(Model):
     objects = {}
 
     def __init__(self, id, x):
+        if id is None:
+            id = str(random.random())
         super(A, self).__init__(id)
         self.x = x
         A.objects[id] = self
