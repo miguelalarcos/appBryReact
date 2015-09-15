@@ -3,14 +3,12 @@ from tornado.queues import Queue
 from static.lib.filter_mongo import pass_filter
 import json
 from static.filters import filters
+import motor
 
-q = Queue()
-q_out = Queue()
+db = motor.MotorClient().test_database
 
-mongo_model = {'A': {}}
-mongo_model['A']['0'] = {'id': '0', 'x': 50}
-mongo_model['A']['1'] = {'id': '1', 'x': 51}
-mongo_model['A']['2'] = {'id': '2', 'x': 52}
+q_mongo = Queue()
+q_send = Queue()
 
 
 class Client(object):
@@ -31,40 +29,41 @@ class Client(object):
 @gen.coroutine
 def sender():
     while True:
-        item = yield q_out.get()
+        item = yield q_send.get()
         client = item[0]
         model = item[1]
-        client.write_message(json.dumps(model))
-        q_out.task_done()
+        yield client.write_message(json.dumps(model))
+        q_send.task_done()
 
 
 @gen.coroutine
-def consumer():
+def mongo_consumer():
     global mongo_model
     while True:
-        item = yield q.get()
+        item = yield q_mongo.get()
         client = item.pop('__client__')
         if '__filter__' in item.keys():
             name = item.pop('__filter__')
             client.add_filter(name, filters[name](**item))
         else:
-            #collection = item.pop('__collection__')
             collection = item['__collection__']
             model = item
-            print 'get model id:', model['id']
-            model_before = mongo_model[collection][model['id']]
-            if '__deleted__' in model.keys():
+
+            new = False
+            deleted = False
+            model_before = yield db[collection].find_one({'_id': model['id']})
+            if model_before is None:
+                yield db[collection].insert(model)
+                new = True
+            elif '__deleted__' in model.keys():
                 deleted = True
-                print 'delete model'
+                yield db[collection].remove({'_id': model['id']})
             else:
-                deleted = False
-                if '__new__' in model.keys():
-                    new = True
-                    print 'new model'
-                else:
-                    new = False
-                    print 'update model'
-            mongo_model[collection][model['id']] = model
+                model_copy = model.copy()
+                del model_copy['id']
+                yield db[collection].update({'_id': model['id']}, model_copy)
+                mongo_model[collection][model['id']] = model
+
             for client in Client.clients:
                 for filt in client.filters:
                     print('filter:', filt)
@@ -78,13 +77,13 @@ def consumer():
                         print 'after:', after
                         if after:
                             print 'send', client, model
-                            yield q_out.put((client, model))
+                            yield q_send.put((client, model))
                             break
                     else:
                         print 'send', client, model
-                        yield q_out.put((client, model))
+                        yield q_send.put((client, model))
                         break
-        q.task_done()
+        q_mongo.task_done()
 
 
 class MainHandler(web.RequestHandler):
@@ -104,7 +103,7 @@ class SocketHandler(websocket.WebSocketHandler):
         print('***', message)
         item = json.loads(message)
         item['__client__'] = self
-        yield q.put(item)
+        yield q_mongo.put(item)
 
 app = web.Application([
     (r"/", MainHandler),
@@ -115,7 +114,7 @@ app = web.Application([
 
 if __name__ == '__main__':
     app.listen(8888)
-    ioloop.IOLoop.current().spawn_callback(consumer)
+    ioloop.IOLoop.current().spawn_callback(mongo_consumer)
     ioloop.IOLoop.current().spawn_callback(sender)
     ioloop.IOLoop.instance().start()
 
