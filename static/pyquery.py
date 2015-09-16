@@ -1036,7 +1036,8 @@ class NodeCollection:
       "Remove the set of matched elements from the DOM."
 
       for _node in self._nodes:
-          _node.get_parent().removeChild(_node)
+          #_node.get_parent().removeChild(_node)
+          _node.parent.removeChild(_node._node)
 
   def removeAttr(self, attr):
       "Remove an attribute from each element in the set of matched elements."

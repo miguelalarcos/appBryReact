@@ -46,24 +46,31 @@ class Controller(object):
         index = tupla[0]
         self.lista.insert(index, model)
         print('new: ', model, tupla)
-        node = DIV(model.id)
+        node = DIV(Id=model.id)
         reactive(model, self.func, node)
         action = tupla[1]
         if action == 'append':
-            self.node.append(node)
+            ref = Selector('#'+str(self.node.id)).get()
+            ref.append(node)
         elif action == 'before':
-            ref = Selector('#'+str(model.id), self.node).get()
+            #ref = Selector('#'+str(self.node.id)).get()
+            ref = Selector('#'+str(tupla[2])).get()
             ref.before(node)
         elif action == 'after':
-            ref = Selector('#'+str(model.id), self.node).get()
+            #ref = Selector('#'+str(self.node.id)).get()
+            ref = Selector('#'+str(tupla[2])).get()
             ref.after(node)
 
     def out(self, model):
         index = self.indexById(model.id)
         del self.lista[index]
         print ('out: ', model)
-        ref = Selector('#'+str(model.id), self.node).get()
-        self.node.remove(ref)
+        node = Selector('#'+str(model.id)).get()
+        node.remove()
+        #ref = Selector('#'+str(self.node.id)).get()
+        #ref.removeChild(node)
+        #self.node.removeChild(node)
+        print('eliminado')
 
     def modify(self, model):
         index = self.indexById(model.id)
@@ -74,15 +81,18 @@ class Controller(object):
         else:
             print('move to ', model, tupla)
             #
-            node = Selector('#'+str(model.id), self.node).get()
-            self.node.remove(node)
+            node = Selector('#'+str(model.id)).get()
+            node.remove()
+            #ref = Selector('#'+str(self.node.id)).get()
+            #ref.removeChild(node)
+            #self.node.removeChild(node)
             #
             action = tupla[1]
             if action == 'before':
-                ref = Selector('#'+str(tupla[2]), self.node).get()
+                ref = Selector('#'+str(tupla[2])).get()
                 ref.before(node)
             elif action == 'after':
-                ref = Selector('#'+str(tupla[2]), self.node).get()
+                ref = Selector('#'+str(tupla[2])).get()
                 ref.after(node)
             #
         self.lista.insert(tupla[0], model)

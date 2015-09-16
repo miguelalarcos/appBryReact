@@ -15,6 +15,7 @@ DIV = html.DIV
 
 class A(Model):
     objects = {}
+
     def __init__(self, id, x):
         super(A, self).__init__(id)
         self.x = x
@@ -26,11 +27,14 @@ filter = filters['0'](x=5, y=10)
 
 
 def hello(model, node):
-    node.text = model.x
+    print('id: ' + str(model.id) + ', x:' + str(model.x))
+    node.text = 'id: ' + str(model.id) + ', x:' + str(model.x)
 
-container = DIV('container')
-controllers = [Controller(key='x', filter=filter, node=container, func=hello)]
+container = DIV(Id='container')
+container.text = 'Contenedor'
 document <= container
+controllers = [Controller(key='x', filter=filter, node=container, func=hello)]
+
 # ##############
 
 
