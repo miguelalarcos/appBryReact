@@ -33,6 +33,8 @@ class Node:
          print(dir(content))
          self._node=content
 
+      self.childNodes2 = []
+
   def __repr__(self):
       return '%s' % self._node
 
@@ -67,7 +69,7 @@ class Node:
 
   def after(self, node):
       assert isinstance(node, Node), "pydom.py:after node isn't of type Node"
-
+      self.parent.childNodes2.append(node)
       #print("after")
       if self.nextSibling is not None:
          #print('next sibling exists')
@@ -81,6 +83,8 @@ class Node:
 
   def append(self, node):
       #print("in append")
+      assert isinstance(node, Node)
+      self.parent.childNodes2.append(node)
       if isinstance(node, str):
          _n=Node(node)
          self._node.appendChild(_n._node)
@@ -88,6 +92,8 @@ class Node:
          self._node.appendChild(node._node)
 
   def before(self, node):
+      assert isinstance(node, Node)
+      self.parent.childNodes2.append(node)
       if isinstance(node, str):
          _n=Node(node)
          self.parent.insertBefore(_n._node, self._node)
@@ -121,6 +127,7 @@ class Node:
       self.set_style(property, value)
 
   def empty(self):
+      self.childNodes2 = []
       for _child in self._node.children():
           self._node.removeChild(_child)
 
@@ -216,17 +223,25 @@ class Selector:
          self.get=self._function_get
 
   def _function_get(self):
+      _list = []
+      for ch in self._doc.childNodes2:
+          if self._function(ch):
+              _list.append(ch)
+      return NodeCollection([Node(_n) for _n in _list])
+
+      """
       def recurse(node):
           _list=[]
           if self._function(node):
+             print('append node', node)
              _list.append(node)
 
           for _node in node.childNodes:
               _list+=recurse(_node)
 
           return _list
-
       return NodeCollection([Node(_n) for _n in recurse(self._doc)])
+      """
 
   def get(self):
       if self._selector_type=="id":
@@ -1038,6 +1053,7 @@ class NodeCollection:
       for _node in self._nodes:
           #_node.get_parent().removeChild(_node)
           _node.parent.removeChild(_node._node)
+          _node.parent.childNodes.remove(_node)
 
   def removeAttr(self, attr):
       "Remove an attribute from each element in the set of matched elements."

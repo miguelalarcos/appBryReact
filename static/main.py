@@ -4,7 +4,6 @@ import javascript
 WebSocket = javascript.JSConstructor(window.WebSocket)
 
 import json
-print(dir(json))
 import random
 from reactive import Model, consume
 from controller import Controller
@@ -28,12 +27,23 @@ filter = filters['0'](x=5, y=10)
 
 def hello(model, node):
     print('id: ' + str(model.id) + ', x:' + str(model.x))
-    node.text = 'id: ' + str(model.id) + ', x:' + str(model.x)
+    node.text('id: ' + str(model.id) + ', x:' + str(model.x))
+
+
+def hello2(model, node):
+    print('--id: ' + str(model.id) + ', x:' + str(model.x))
+    node.text('--id: ' + str(model.id) + ', x:' + str(model.x))
 
 container = DIV(Id='container')
 container.text = 'Contenedor'
 document <= container
+
+first = DIV(Id='first')
+first.text = 'First'
+document <= first
+
 controllers = [Controller(key='x', filter=filter, node=container, func=hello)]
+controllers.append(Controller(key='x', filter=filter, node=first, func=hello2, first=True))
 
 # ##############
 
@@ -58,12 +68,15 @@ def on_message(evt):
             del klass.objects[model.id]
         else:
             for k, v in data.items():
+                if k == 'id':
+                    continue
+                print ('set model.id', data['id'], k, v)
                 setattr(model, k, v)
 
         print('consume')
         consume()
     except Exception as e:
-        print ('error', e)
+        print ('******************** error', e)
 
 
 ws = WebSocket("ws://127.0.0.1:8888/ws")

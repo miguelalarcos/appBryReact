@@ -1,31 +1,53 @@
 from lib.filter_mongo import pass_filter
 from reactive import reactive
-from browser import html
-from pyquery import Selector
+from browser import html, window
+import random
+
+jq = window.jQuery.noConflict(True)
 
 DIV = html.DIV
 
 
+def makeDIV(id, model, func):
+    node = jq("<div reactive_id='"+str(id)+"'>test</div>")
+    name = func.__name__+str(random.random())
+    reactive(model, func, node, name)
+    return node
+
 class Controller(object):
     controllers = []
 
-    def __init__(self, key, filter, node, func):
+    def __init__(self, key, filter, node, func, first=False):
         self.lista = []
         self.key = key
         self.filter = filter
         self.node = node
         self.func = func
+        self.first = first
         self.__class__.controllers.append(self)
+
+    def selector_func(self, attr):
+        def helper(node):
+            print('helper')
+            if not hasattr(node, 'reactive_id'):
+                print ('retorno false')
+                return False
+            print('tiene atributo reactive_id')
+            return node.reactive_id == attr
+        return helper
 
     def pass_filter(self, raw):
         return pass_filter(self.filter, raw)
 
     def test(self, model, raw):
+        print('im in tst of node', self.node.id)
+
         if model.id in [x.id for x in self.lista]:
             print('esta dentro')
             if pass_filter(self.filter, raw):
                 print('y permance dentro', 'MODIFY')
-                self.modify(model)
+                if not self.first:
+                    self.modify(model)
                 return False
             else:
                 print('y sale', 'OUT')
@@ -44,32 +66,51 @@ class Controller(object):
     def new(self, model):
         tupla = self.indexInList(model)
         index = tupla[0]
+        if self.first and index != 0:
+            return
         self.lista.insert(index, model)
         print('new: ', model, tupla)
-        node = DIV(Id=model.id)
-        reactive(model, self.func, node)
+
         action = tupla[1]
         if action == 'append':
-            ref = Selector('#'+str(self.node.id)).get()
+            #node = DIV()
+            #node.reactive_id = model.id
+            #reactive(model, self.func, node)
+            node = makeDIV(model.id, model, self.func)
+
+            ref = jq('#'+str(self.node.id))
             ref.append(node)
         elif action == 'before':
-            #ref = Selector('#'+str(self.node.id)).get()
-            ref = Selector('#'+str(tupla[2])).get()
+            #node = DIV()
+            #node.reactive_id = model.id
+            #reactive(model, self.func, node)
+            node = makeDIV(model.id, model, self.func)
+
+            ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
             ref.before(node)
+            if self.first:
+                ref.remove()
+                self.lista = [model]
         elif action == 'after':
-            #ref = Selector('#'+str(self.node.id)).get()
-            ref = Selector('#'+str(tupla[2])).get()
-            ref.after(node)
+            if self.first:
+                self.lista = [model]
+            else:
+                #node = DIV()
+                #node.reactive_id = model.id
+                #reactive(model, self.func, node)
+                node = makeDIV(model.id, model, self.func)
+
+                ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
+                ref.after(node)
 
     def out(self, model):
         index = self.indexById(model.id)
         del self.lista[index]
         print ('out: ', model)
-        node = Selector('#'+str(model.id)).get()
+
+        #node = Selector(self.selector_func(str(model.id)), self.node).get()
+        node = jq('#'+str(self.node.id)).children("[reactive_id='"+str(model.id)+"']")
         node.remove()
-        #ref = Selector('#'+str(self.node.id)).get()
-        #ref.removeChild(node)
-        #self.node.removeChild(node)
         print('eliminado')
 
     def modify(self, model):
@@ -80,21 +121,20 @@ class Controller(object):
             print('ocupa misma posicion')
         else:
             print('move to ', model, tupla)
-            #
-            node = Selector('#'+str(model.id)).get()
+
+            #node = Selector(self.selector_func(str(model.id)), self.node).get()
+            node = jq('#'+str(self.node.id)).children("[reactive_id='"+str(model.id)+"']")
             node.remove()
-            #ref = Selector('#'+str(self.node.id)).get()
-            #ref.removeChild(node)
-            #self.node.removeChild(node)
-            #
             action = tupla[1]
             if action == 'before':
-                ref = Selector('#'+str(tupla[2])).get()
+                ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
+                #ref = Selector(self.selector_func(str(tupla[2])), self.node).get()
                 ref.before(node)
             elif action == 'after':
-                ref = Selector('#'+str(tupla[2])).get()
+                ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
+                #ref = Selector(self.selector_func(str(tupla[2])), self.node).get()
                 ref.after(node)
-            #
+
         self.lista.insert(tupla[0], model)
 
     def indexById(self, id):
@@ -111,7 +151,7 @@ class Controller(object):
         v = getattr(model, self.key)
         index = 0
         for item in self.lista:
-            if v <= getattr(item, self.key):
+            if v > getattr(item, self.key):
                 break
             index += 1
         if index == 0:
