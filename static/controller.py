@@ -14,6 +14,7 @@ def makeDIV(id, model, func):
     reactive(model, func, node, name)
     return node
 
+
 class Controller(object):
     controllers = []
 
@@ -36,8 +37,8 @@ class Controller(object):
             print('esta dentro')
             if pass_filter(self.filter, raw):
                 print('y permance dentro', 'MODIFY')
-                if not self.first:
-                    self.modify(model)
+                # if not self.first:
+                self.modify(model)
                 return False
             else:
                 print('y sale', 'OUT')
@@ -51,16 +52,15 @@ class Controller(object):
                 return False
             else:
                 print('y permanece fuera')
-                return False
+                return True #False
 
     def new(self, model):
         tupla = self.indexInList(model)
         index = tupla[0]
-        #if self.first and index != 0:
-        #    return
+
         self.lista.insert(index, model)
         print('new: ', model, tupla)
-
+        print([x.x for x in self.lista])
         action = tupla[1]
         if action == 'append':
             node = makeDIV(model.id, model, self.func)
@@ -89,7 +89,7 @@ class Controller(object):
         index = self.indexById(model.id)
         del self.lista[index]
         print ('out: ', model)
-
+        print([x.x for x in self.lista])
         node = jq('#'+str(self.node.id)).children("[reactive_id='"+str(model.id)+"']")
         node.remove()
         print('eliminado')
@@ -118,6 +118,7 @@ class Controller(object):
                 ref.after(node)
 
         self.lista.insert(tupla[0], model)
+        print([x.x for x in self.lista])
 
     def indexById(self, id):
         index = 0

@@ -11,13 +11,14 @@ from filters.filters import filters
 
 DIV = html.DIV
 
+ws = WebSocket("ws://127.0.0.1:8888/ws")
+Model.ws = ws
 
 class A(Model):
     objects = {}
 
-    def __init__(self, id, x):
-        super(A, self).__init__(id)
-        self.x = x
+    def __init__(self, id, **kw):
+        super(A, self).__init__(id, **kw)
 
 
 collections = {}
@@ -59,26 +60,24 @@ def on_message(evt):
         try:
             model = klass.objects[data['id']]
             print('encontrado')
-            #
             for k, v in data.items():
-                if k == 'id':
+                if k in ('id', '__deleted__'):
                     continue
                 print ('set model.id', data['id'], k, v)
-                setattr(model, k, v)
-            #
+                setattr(model, '_'+k, v)
         except KeyError:
             print('nuevo')
-            model = klass(**data)
+            data_ = {}
+            for k, v in data.items():
+                if not k.startswith('_') and k != 'id':
+                    data_['_'+k] = v
+                else:
+                    data_[k] = v
+            model = klass(**data_)
 
         if all([c.test(model, data) for c in controllers]):
             print('eliminamos obj de cache')
             del klass.objects[model.id]
-        #else:
-        #    for k, v in data.items():
-        #        if k == 'id':
-        #            continue
-        #        print ('set model.id', data['id'], k, v)
-        #        setattr(model, k, v)
 
         print('consume')
         consume()
@@ -86,7 +85,7 @@ def on_message(evt):
         print ('******************** error', e)
 
 
-ws = WebSocket("ws://127.0.0.1:8888/ws")
+# ws = WebSocket("ws://127.0.0.1:8888/ws")
 ws.bind('message', on_message)
 
 button_send = html.BUTTON()
@@ -95,15 +94,28 @@ document <= button_send
 
 
 sent_initial_data = False
+
+
 def send_data():
     global sent_initial_data
     if not sent_initial_data:
         ws.send(json.dumps({'x': 5, 'y': 10, '__filter__': '0'}))
-        ws.send(json.dumps({'id': '0', '__collection__': 'A', 'x': random.randint(0, 10)}))
-        ws.send(json.dumps({'id': '1', '__collection__': 'A', 'x': random.randint(0, 10)}))
-        ws.send(json.dumps({'id': '2', '__collection__': 'A', 'x': random.randint(0, 10)}))
+        #ws.send(json.dumps({'id': '0', '__collection__': 'A', 'x': random.randint(0, 10)}))
+        #ws.send(json.dumps({'id': '1', '__collection__': 'A', 'x': random.randint(0, 10)}))
+        #ws.send(json.dumps({'id': '2', '__collection__': 'A', 'x': random.randint(0, 10)}))
         sent_initial_data = True
-    ws.send(json.dumps({'id': random.choice(['0', '1', '2']), '__collection__': 'A', 'x': random.randint(0, 10)}))
+    try:
+        if random.random() < 0.5:
+            obj = A(None, x=random.randint(0, 10))
+        else:
+            obj = random.choice(list(A.objects.values()))
+            print('*** random choice object')
+            obj.x = random.randint(0, 10)
+    except Exception as e:
+        print ('-----------error:', e)
+        obj = A(None, x=random.randint(0, 10))
+    obj.save()
+    #ws.send(json.dumps({'id': random.choice(['0', '1', '2']), '__collection__': 'A', 'x': random.randint(0, 10)}))
 
 button_send.bind('click', send_data)
 

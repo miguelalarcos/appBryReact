@@ -1,4 +1,7 @@
 def pass_filter(filter, model):
+    print('model en pass_filter', model)
+    if '__deleted__' in model.keys():
+        return False
     for key, value in filter.items():
         if key == '__collection__':
             continue
