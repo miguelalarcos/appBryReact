@@ -26,16 +26,6 @@ class Controller(object):
         self.first = first
         self.__class__.controllers.append(self)
 
-    def selector_func(self, attr):
-        def helper(node):
-            print('helper')
-            if not hasattr(node, 'reactive_id'):
-                print ('retorno false')
-                return False
-            print('tiene atributo reactive_id')
-            return node.reactive_id == attr
-        return helper
-
     def pass_filter(self, raw):
         return pass_filter(self.filter, raw)
 
@@ -66,38 +56,30 @@ class Controller(object):
     def new(self, model):
         tupla = self.indexInList(model)
         index = tupla[0]
-        if self.first and index != 0:
-            return
+        #if self.first and index != 0:
+        #    return
         self.lista.insert(index, model)
         print('new: ', model, tupla)
 
         action = tupla[1]
         if action == 'append':
-            #node = DIV()
-            #node.reactive_id = model.id
-            #reactive(model, self.func, node)
             node = makeDIV(model.id, model, self.func)
 
             ref = jq('#'+str(self.node.id))
             ref.append(node)
         elif action == 'before':
-            #node = DIV()
-            #node.reactive_id = model.id
-            #reactive(model, self.func, node)
             node = makeDIV(model.id, model, self.func)
 
             ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
             ref.before(node)
             if self.first:
                 ref.remove()
-                self.lista = [model]
+                #self.lista = [model]
         elif action == 'after':
             if self.first:
-                self.lista = [model]
+                #self.lista = [model]
+                pass
             else:
-                #node = DIV()
-                #node.reactive_id = model.id
-                #reactive(model, self.func, node)
                 node = makeDIV(model.id, model, self.func)
 
                 ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
@@ -108,10 +90,13 @@ class Controller(object):
         del self.lista[index]
         print ('out: ', model)
 
-        #node = Selector(self.selector_func(str(model.id)), self.node).get()
         node = jq('#'+str(self.node.id)).children("[reactive_id='"+str(model.id)+"']")
         node.remove()
         print('eliminado')
+        if self.first and index == 0 and len(self.lista) > 0:
+            node = makeDIV(self.lista[0].id, self.lista[0], self.func)
+            ref = jq('#'+str(self.node.id))
+            ref.append(node)
 
     def modify(self, model):
         index = self.indexById(model.id)
@@ -122,17 +107,14 @@ class Controller(object):
         else:
             print('move to ', model, tupla)
 
-            #node = Selector(self.selector_func(str(model.id)), self.node).get()
             node = jq('#'+str(self.node.id)).children("[reactive_id='"+str(model.id)+"']")
             node.remove()
             action = tupla[1]
             if action == 'before':
                 ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
-                #ref = Selector(self.selector_func(str(tupla[2])), self.node).get()
                 ref.before(node)
             elif action == 'after':
                 ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
-                #ref = Selector(self.selector_func(str(tupla[2])), self.node).get()
                 ref.after(node)
 
         self.lista.insert(tupla[0], model)
@@ -150,8 +132,11 @@ class Controller(object):
             return (0, 'append')
         v = getattr(model, self.key)
         index = 0
+        print([x.x for x in self.lista])
         for item in self.lista:
+            print('comparing', v, getattr(item, self.key))
             if v > getattr(item, self.key):
+                print('break')
                 break
             index += 1
         if index == 0:

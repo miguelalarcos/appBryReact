@@ -59,6 +59,13 @@ def on_message(evt):
         try:
             model = klass.objects[data['id']]
             print('encontrado')
+            #
+            for k, v in data.items():
+                if k == 'id':
+                    continue
+                print ('set model.id', data['id'], k, v)
+                setattr(model, k, v)
+            #
         except KeyError:
             print('nuevo')
             model = klass(**data)
@@ -66,12 +73,12 @@ def on_message(evt):
         if all([c.test(model, data) for c in controllers]):
             print('eliminamos obj de cache')
             del klass.objects[model.id]
-        else:
-            for k, v in data.items():
-                if k == 'id':
-                    continue
-                print ('set model.id', data['id'], k, v)
-                setattr(model, k, v)
+        #else:
+        #    for k, v in data.items():
+        #        if k == 'id':
+        #            continue
+        #        print ('set model.id', data['id'], k, v)
+        #        setattr(model, k, v)
 
         print('consume')
         consume()

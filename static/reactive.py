@@ -25,7 +25,10 @@ def reactive(model, func, node=None, func_name=''):
         #map_[func.__name__] = set()
         map_[func_name] = set()
         current_call = helper
-        return func(model, node)
+        #return func(model, node)
+        ret = func(model, node)
+        current_name = None
+        return ret
     helper()
 
 
