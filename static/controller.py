@@ -1,11 +1,14 @@
 from lib.filter_mongo import pass_filter
 from reactive import reactive
-from browser import html, window
+#from browser import html, window
+import browser
+#html = browser.html
+window = browser.window
 import random
 
 jq = window.jQuery.noConflict(True)
 
-DIV = html.DIV
+#DIV = html.DIV
 
 
 def makeDIV(id, model, func):
@@ -71,15 +74,12 @@ class Controller(object):
             node = makeDIV(model.id, model, self.func)
 
             ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
+
             ref.before(node)
             if self.first:
                 ref.remove()
-                #self.lista = [model]
         elif action == 'after':
-            if self.first:
-                #self.lista = [model]
-                pass
-            else:
+            if not self.first:
                 node = makeDIV(model.id, model, self.func)
 
                 ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
@@ -89,7 +89,7 @@ class Controller(object):
         index = self.indexById(model.id)
         del self.lista[index]
         print ('out: ', model)
-        print([x.x for x in self.lista])
+
         node = jq('#'+str(self.node.id)).children("[reactive_id='"+str(model.id)+"']")
         node.remove()
         print('eliminado')
@@ -128,16 +128,46 @@ class Controller(object):
             index += 1
         return index
 
+    @staticmethod
+    def compare(a, b, key, order='asc'):
+        v_a = getattr(a, key)
+        v_b = getattr(b, key)
+        if v_a == v_b:
+            return 0
+        if v_a > v_b:
+            if order == 'desc':
+                return 1
+            else:
+                return -1
+        if order == 'desc':
+            return -1
+        else:
+            return 1
+
     def indexInList(self, model):
         if self.lista == []:
             return (0, 'append')
-        v = getattr(model, self.key)
+
         index = 0
         print([x.x for x in self.lista])
+        keys = self.key[:]
+        key, order = keys.pop(0)
+        flag = False
         for item in self.lista:
-            print('comparing', v, getattr(item, self.key))
-            if v > getattr(item, self.key):
-                print('break')
+            while True:
+                ret = Controller.compare(model, item, key, order)
+                if ret == 1:
+                    flag = True
+                    break
+                if ret == 0:
+                    if len(keys):
+                        key, order = keys.pop(0)
+                    else:
+                        flag = True
+                        break
+                else:
+                    break
+            if flag:
                 break
             index += 1
         if index == 0:
