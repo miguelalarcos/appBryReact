@@ -52,10 +52,12 @@ def mongo_consumer():
         print('yield: q_mongo.get()')
         item = yield q_mongo.get()
         print('item from queue', item)
-        client_socket = item.pop('__client__')
-        client = Client.clients[client_socket]
+        #client_socket = item.pop('__client__')
+        #client = Client.clients[client_socket]
 
         if '__filter__' in item.keys():
+            client_socket = item.pop('__client__')
+            client = Client.clients[client_socket]
             name = item.pop('__filter__')
             filt = filters[name](**item)
             client.add_filter(name, filt)
@@ -65,10 +67,10 @@ def mongo_consumer():
             if ret:
                 ret = [(client.socket, r) for r in ret]
                 yield q_send.put(ret)
-        elif '__rpc__' in item.keys():
-            name = item.pop('__rpc__')
+        elif '__RPC__' in item.keys():
+            name = item.pop('__RPC__')
             task = tasks[name]
-            task(**item)
+            task(db=db, queue=q_mongo, **item)
         else:
             collection = item['__collection__']
             model = item
