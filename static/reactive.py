@@ -1,5 +1,6 @@
 import random
 import json
+from lib.epochdate import datetimeargs2epoch
 
 current_call = None
 execute = []
@@ -51,6 +52,7 @@ class Model(object):
         data.update(dct)
         self._dirty = set()
         print ('*** sending data', data)
+        data = datetimeargs2epoch(data)
         Model.ws.send(json.dumps(data))
 
     def reset(self, func):

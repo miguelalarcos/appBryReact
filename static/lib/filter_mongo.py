@@ -19,5 +19,11 @@ def pass_filter(filter, model):
                 elif op == '$lt':
                     if v >= val:
                         return False
+                elif op == '$gte':
+                    if v < val:
+                        return False
+                elif op == '$lte':
+                    if v > val:
+                        return False
     return True
 

@@ -4,6 +4,8 @@ from static.lib.filter_mongo import pass_filter
 import json
 from static.filters.filters import filters
 import motor
+from tasks import tasks
+from static.lib.epochdate import epochargs2datetime, datetimeargs2epoch
 
 db = motor.MotorClient().test_database
 
@@ -31,12 +33,15 @@ class Client(object):
 def sender():
     while True:
         print('yield: q_send.get()')
-        item = yield q_send.get()
-        client = item[0]
-        model = item[1]
-        print('yield: client.write', json.dumps(model))
-        x = client.write_message(json.dumps(model))
-        print ('*******************', x)
+        items = yield q_send.get()
+        if type(items) != list:
+            items = [items]
+        for item in items:
+            client = item[0]
+            model = item[1]
+            model = datetimeargs2epoch(model)
+            print('yield: client.write', json.dumps(model))
+            client.write_message(json.dumps(model))
         q_send.task_done()
 
 
@@ -49,9 +54,21 @@ def mongo_consumer():
         print('item from queue', item)
         client_socket = item.pop('__client__')
         client = Client.clients[client_socket]
+
         if '__filter__' in item.keys():
             name = item.pop('__filter__')
-            client.add_filter(name, filters[name](**item))
+            filt = filters[name](**item)
+            client.add_filter(name, filt)
+            collection = filt['__collection__']
+
+            ret = yield db[collection].find(filt)
+            if ret:
+                ret = [(client.socket, r) for r in ret]
+                yield q_send.put(ret)
+        elif '__rpc__' in item.keys():
+            name = item.pop('__rpc__')
+            task = tasks[name]
+            task(**item)
         else:
             collection = item['__collection__']
             model = item
@@ -123,6 +140,7 @@ class SocketHandler(websocket.WebSocketHandler):
     def on_message(self, message):
         print('***', message)
         item = json.loads(message)
+        item = epochargs2datetime(item)
         item['__client__'] = self
         print('yield: q_mongo.put()')
         yield q_mongo.put(item)

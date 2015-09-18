@@ -1,5 +1,6 @@
 from browser import document, html, window # , websocket
 import javascript
+from lib.epochdate import epochargs2datetime
 
 WebSocket = javascript.JSConstructor(window.WebSocket)
 
@@ -43,8 +44,8 @@ first = DIV(Id='first')
 first.text = 'First'
 document <= first
 
-controllers = [Controller(key='x', filter=filter, node=container, func=hello)]
-controllers.append(Controller(key='x', filter=filter, node=first, func=hello2, first=True))
+controllers = [Controller(key=[('x', 'desc')], filter=filter, node=container, func=hello)]
+controllers.append(Controller(key=[('x', 'desc')], filter=filter, node=first, func=hello2, first=True))
 
 # ##############
 
@@ -54,6 +55,7 @@ def on_message(evt):
         result = evt.data
         print('raw', result)
         data = json.loads(result)
+        data = epochargs2datetime(data)
         collection = data.pop('__collection__')
         klass = collections[collection]
         print('buscamos si ya tenemos el objeto con id', data['id'])
@@ -100,9 +102,6 @@ def send_data():
     global sent_initial_data
     if not sent_initial_data:
         ws.send(json.dumps({'x': 5, 'y': 10, '__filter__': '0'}))
-        #ws.send(json.dumps({'id': '0', '__collection__': 'A', 'x': random.randint(0, 10)}))
-        #ws.send(json.dumps({'id': '1', '__collection__': 'A', 'x': random.randint(0, 10)}))
-        #ws.send(json.dumps({'id': '2', '__collection__': 'A', 'x': random.randint(0, 10)}))
         sent_initial_data = True
     try:
         if random.random() < 0.5:
@@ -115,7 +114,7 @@ def send_data():
         print ('-----------error:', e)
         obj = A(None, x=random.randint(0, 10))
     obj.save()
-    #ws.send(json.dumps({'id': random.choice(['0', '1', '2']), '__collection__': 'A', 'x': random.randint(0, 10)}))
+
 
 button_send.bind('click', send_data)
 
