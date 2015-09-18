@@ -1,10 +1,8 @@
 import random
 import json
 
-current_name = None
 current_call = None
 execute = []
-#map_ = {}
 
 
 def consume():
@@ -14,19 +12,16 @@ def consume():
         call()
 
 
-def reactive(model, func, node=None, func_name=''):
-    def helper():
-        global current_call, current_name
-        current_name = func_name
+def reactive(model, func, node=None):
 
-        model.reset(func_name)
-        #objects = map_.setdefault(func_name, set())
-        #while objects:
-        #    objects.pop().reset(func_name)
+    def helper():
+        global current_call
+
+        model.reset(helper)
 
         current_call = helper
         func(model, node)
-        current_name = None
+        current_call = None
 
     helper()
 
@@ -58,14 +53,13 @@ class Model(object):
         print ('*** sending data', data)
         Model.ws.send(json.dumps(data))
 
-    def reset(self, name):
-        print ('reset', name)
-        self._dep = [item for item in self._dep if item['name'] != name]
+    def reset(self, func):
+        print ('reset', func)
+        self._dep = [item for item in self._dep if item['call'] != func]
 
     def __getattr__(self, name):
-        if current_name is not None:
-            #map_[current_name].add(self)
-            self._dep.append({'name': current_name, 'call': current_call, 'attr': name})
+        #if current_name is not None:
+        self._dep.append({'call': current_call, 'attr': name})
         return self.__dict__['_'+name]
 
     def __setattr__(self, key, value):

@@ -16,10 +16,11 @@ def h(model, node):
 
 
 def test_1():
-    m = A(id='0', x=0, y=3)
+    m = A(id='0', x=0)
 
+    m.y = 3
     assert execute == []
-    reactive(m, h, None, '0')
+    reactive(m, h, None)
 
     m.x = 7
     m.x = 8

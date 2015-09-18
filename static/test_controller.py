@@ -139,8 +139,66 @@ def test_new__after_first():
     assert not after.called
 
 
-def test_out():
-    pass
+def test_out_first():
+    jq = Mock()
+    children = jq().children
+
+    controller.jq = jq
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
+    m = A(id='2', x=0, y=3)
+    controller_.models = [m]
+
+    controller_.out(m)
+
+    assert call("[reactive_id='2']") == children.mock_calls[0]
+    assert children().remove.called
+    assert controller_.models == []
+
+
+def test_out_first_second_goes_to_first():
+    jq = Mock()
+    makeDIV_backup = controller.makeDIV
+    makeDIV = Mock()
+
+    controller.jq = jq
+    controller.makeDIV = makeDIV
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
+    m = A(id='2', x=0, y=3)
+    m2 = A(id='3', x=0, y=2)
+    controller_.models = [m, m2]
+
+    controller_.out(m)
+    controller.makeDIV = makeDIV_backup
+    assert controller_.models == [m2]
+    assert call("#container") == jq.mock_calls[-2]
+    assert makeDIV.mock_calls[0] == call('3', m2, controller_.func)
+    assert jq().append.called
+    assert controller_.models == [m2]
+
+
+def test_out_not_first():
+    jq = Mock()
+
+    controller.jq = jq
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    m = A(id='2', x=0, y=3)
+    controller_.models = [m]
+
+    controller_.out(m)
+    assert controller_.models == []
+
+
+def test_out_not_first_more_than_one():
+    jq = Mock()
+
+    controller.jq = jq
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    m = A(id='2', x=0, y=3)
+    m2 = A(id='3', x=0, y=3)
+    controller_.models = [m, m2]
+
+    controller_.out(m)
+    assert controller_.models == [m2]
 
 
 def test_modify_when_second_pass_to_first():
@@ -158,7 +216,7 @@ def test_modify_when_second_pass_to_first():
 
     assert call("[reactive_id='2']") in children.mock_calls
     assert children().remove.called
-    assert call("<div reactive_id='3'>test</div>") in jq.mock_calls #jq.assert_any_call("<div reactive_id='3'>test</div>")
+    assert call("<div reactive_id='3'>test</div>") in jq.mock_calls
     assert controller_.models == [m2, m]
 
 
@@ -178,4 +236,44 @@ def test_modify_when_first_pass_to_second():
     assert call("[reactive_id='2']") in children.mock_calls
     assert children().remove.called
     assert call("<div reactive_id='3'>test</div>") in jq.mock_calls
+    assert controller_.models == [m2, m]
+
+
+def test_modify_when_move_to__after():
+    jq = Mock()
+    children = jq().children
+
+    controller.jq = jq
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    m = A(id='2', x=0, y=3)
+    m2 = A(id='3', x=0, y=2)
+    controller_.models = [m, m2]
+    m.y = 1
+
+    controller_.modify(m)
+
+    assert call("[reactive_id='2']") == children.mock_calls[0]
+    assert children().remove.called
+    assert call("[reactive_id='3']") == children.mock_calls[2]
+    assert children().after.called
+    assert controller_.models == [m2, m]
+
+
+def test_modify_when_move_to__before():
+    jq = Mock()
+    children = jq().children
+
+    controller.jq = jq
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    m = A(id='2', x=0, y=3)
+    m2 = A(id='3', x=0, y=2)
+    controller_.models = [m, m2]
+    m2.y = 4
+
+    controller_.modify(m2)
+
+    assert call("[reactive_id='3']") == children.mock_calls[0]
+    assert children().remove.called
+    assert call("[reactive_id='2']") == children.mock_calls[2]
+    assert children().before.called
     assert controller_.models == [m2, m]

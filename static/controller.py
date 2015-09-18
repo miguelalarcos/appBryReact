@@ -1,20 +1,15 @@
 from lib.filter_mongo import pass_filter
 from reactive import reactive
-#from browser import html, window
+
 import browser
-#html = browser.html
 window = browser.window
-import random
 
 jq = window.jQuery.noConflict(True)
-
-#DIV = html.DIV
 
 
 def makeDIV(id, model, func):
     node = jq("<div reactive_id='"+str(id)+"'>test</div>")
-    name = func.__name__+str(random.random())
-    reactive(model, func, node, name)
+    reactive(model, func, node)
     return node
 
 
@@ -40,7 +35,6 @@ class Controller(object):
             print('esta dentro')
             if pass_filter(self.filter, raw):
                 print('y permance dentro', 'MODIFY')
-                # if not self.first:
                 self.modify(model)
                 return False
             else:
@@ -125,7 +119,6 @@ class Controller(object):
                 ref.after(node)
 
         self.models.insert(tupla[0], model)
-        print([x.x for x in self.models])
 
     def indexById(self, id):
         index = 0
