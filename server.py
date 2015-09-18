@@ -89,7 +89,9 @@ def mongo_consumer():
                     print('before:', before)
 
                     if not before and not deleted:
-                        after = pass_filter(filt, model)
+                        model_after = model_before.copy()
+                        model_after.update(model)
+                        after = pass_filter(filt, model_after)
                         print('after:', after)
                         if after:
                             print('send', client.socket, model)

@@ -4,7 +4,7 @@ import json
 current_name = None
 current_call = None
 execute = []
-map_ = {}
+#map_ = {}
 
 
 def consume():
@@ -17,28 +17,25 @@ def consume():
 def reactive(model, func, node=None, func_name=''):
     def helper():
         global current_call, current_name
-        current_name = func_name #func.__name__
-        objects = map_.get(func_name) #func.__name__)
-        if objects is None:
-            objects = set()
-        for obj in objects:
-            obj.reset(func_name) #func.__name__)
-        #map_[func.__name__] = set()
-        map_[func_name] = set()
+        current_name = func_name
+
+        model.reset(func_name)
+        #objects = map_.setdefault(func_name, set())
+        #while objects:
+        #    objects.pop().reset(func_name)
+
         current_call = helper
-        #return func(model, node)
-        ret = func(model, node)
+        func(model, node)
         current_name = None
-        return ret
+
     helper()
 
 
-# base class Model. __getattr__ makes (marks) the current reactive function to be called when the attribute is set
 class Model(object):
     def __init__(self, id, **kw):
         if id is None:
             id = str(random.random())
-        self.__dict__['_map'] = []
+        self.__dict__['_dep'] = []
         self.__dict__['_dirty'] = set()
         self.__dict__['id'] = id
         self.__dict__['__collection__'] = self.__class__.__name__
@@ -63,12 +60,12 @@ class Model(object):
 
     def reset(self, name):
         print ('reset', name)
-        self.__dict__['_map'] = [item for item in self._map if item['name'] != name]
+        self._dep = [item for item in self._dep if item['name'] != name]
 
     def __getattr__(self, name):
         if current_name is not None:
-            map_[current_name].add(self)
-            self._map.append({'name': current_name, 'call': current_call, 'attr': name})
+            #map_[current_name].add(self)
+            self._dep.append({'name': current_name, 'call': current_call, 'attr': name})
         return self.__dict__['_'+name]
 
     def __setattr__(self, key, value):
@@ -92,8 +89,8 @@ class Model(object):
             if dirty:
                 self._dirty.add(key)
             global execute
-            print('self._map', self._map)
-            for item in self._map:
+
+            for item in self._dep:
                 if item['attr'] == key and item['call'] not in execute:
                     print('append to execute model.id', self.id, key, value)
                     execute.append(item['call'])

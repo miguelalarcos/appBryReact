@@ -22,7 +22,7 @@ class Controller(object):
     controllers = []
 
     def __init__(self, key, filter, node, func, first=False):
-        self.lista = []
+        self.models = []
         self.key = key
         self.filter = filter
         self.node = node
@@ -36,7 +36,7 @@ class Controller(object):
     def test(self, model, raw):
         print('im in tst of node', self.node.id)
 
-        if model.id in [x.id for x in self.lista]:
+        if model.id in [x.id for x in self.models]:
             print('esta dentro')
             if pass_filter(self.filter, raw):
                 print('y permance dentro', 'MODIFY')
@@ -61,9 +61,9 @@ class Controller(object):
         tupla = self.indexInList(model)
         index = tupla[0]
 
-        self.lista.insert(index, model)
+        self.models.insert(index, model)
         print('new: ', model, tupla)
-        print([x.x for x in self.lista])
+        print([x.x for x in self.models])
         action = tupla[1]
         if action == 'append':
             node = makeDIV(model.id, model, self.func)
@@ -87,23 +87,30 @@ class Controller(object):
 
     def out(self, model):
         index = self.indexById(model.id)
-        del self.lista[index]
+        del self.models[index]
         print ('out: ', model)
 
         node = jq('#'+str(self.node.id)).children("[reactive_id='"+str(model.id)+"']")
         node.remove()
         print('eliminado')
-        if self.first and index == 0 and len(self.lista) > 0:
-            node = makeDIV(self.lista[0].id, self.lista[0], self.func)
+        if self.first and index == 0 and len(self.models) > 0:
+            node = makeDIV(self.models[0].id, self.models[0], self.func)
             ref = jq('#'+str(self.node.id))
             ref.append(node)
 
     def modify(self, model):
         index = self.indexById(model.id)
-        del self.lista[index]
+        del self.models[index]
         tupla = self.indexInList(model)
         if index == tupla[0]:
             print('ocupa misma posicion')
+        elif self.first:
+            if index == 0:
+                jq('#'+str(self.node.id)).children("[reactive_id='"+str(model.id)+"']").remove()
+                jq('#'+str(self.node.id)).append(makeDIV(self.models[0].id, self.models[0], self.func))
+            elif tupla[0] == 0:
+                jq('#'+str(self.node.id)).children("[reactive_id='"+str(self.models[0].id)+"']").remove()
+                jq('#'+str(self.node.id)).append(makeDIV(model.id, model, self.func))
         else:
             print('move to ', model, tupla)
 
@@ -117,12 +124,12 @@ class Controller(object):
                 ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
                 ref.after(node)
 
-        self.lista.insert(tupla[0], model)
-        print([x.x for x in self.lista])
+        self.models.insert(tupla[0], model)
+        print([x.x for x in self.models])
 
     def indexById(self, id):
         index = 0
-        for item in self.lista:
+        for item in self.models:
             if item.id == id:
                 break
             index += 1
@@ -145,15 +152,15 @@ class Controller(object):
             return 1
 
     def indexInList(self, model):
-        if self.lista == []:
+        if self.models == []:
             return (0, 'append')
 
         index = 0
-        print([x.x for x in self.lista])
+        print([x.x for x in self.models])
         keys = self.key[:]
         key, order = keys.pop(0)
         flag = False
-        for item in self.lista:
+        for item in self.models:
             while True:
                 ret = Controller.compare(model, item, key, order)
                 if ret == 1:
@@ -171,6 +178,6 @@ class Controller(object):
                 break
             index += 1
         if index == 0:
-            return (index, 'before', self.lista[0].id)
+            return (index, 'before', self.models[0].id)
         else:
-            return (index, 'after', self.lista[index-1].id)
+            return (index, 'after', self.models[index-1].id)

@@ -1,5 +1,5 @@
 import sys
-from mock import Mock
+from mock import Mock, MagicMock, call
 sys.modules['browser'] = Mock()
 
 import controller
@@ -29,14 +29,14 @@ m = A(id='2', x=0, y=1)
 
 def test_index_in_list_empty():
     controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(), func=lambda: 5)
-    controller.lista = []
+    controller.models = []
     ret = controller.indexInList(m)
     assert ret == (0, 'append')
 
 
 def test_index_in_list_before():
     controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(), func=lambda: 5)
-    controller.lista = [m0]
+    controller.models = [m0]
     m = A(id='2', x=1, y=1)
     ret = controller.indexInList(m)
     assert ret == (0, 'before', '0')
@@ -44,7 +44,7 @@ def test_index_in_list_before():
 
 def test_index_in_list_before0():
     controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(), func=lambda: 5)
-    controller.lista = [m0]
+    controller.models = [m0]
     m = A(id='2', x=0, y=3)
     ret = controller.indexInList(m)
     assert ret == (0, 'before', '0')
@@ -52,7 +52,7 @@ def test_index_in_list_before0():
 
 def test_index_in_list_after():
     controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(), func=lambda: 5)
-    controller.lista = [m0]
+    controller.models = [m0]
     m = A(id='2', x=-1, y=3)
     ret = controller.indexInList(m)
     assert ret == (1, 'after', '0')
@@ -60,7 +60,7 @@ def test_index_in_list_after():
 
 def test_index_in_list_second_key_after_2():
     controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(), func=lambda: 5)
-    controller.lista = [m0, m1]
+    controller.models = [m0, m1]
     ret = controller.indexInList(m)
     assert ret == (2, 'after', '1')
 
@@ -74,7 +74,7 @@ def test_new_append():
     m = A(id='2', x=0, y=3)
     controller_.new(m)
     assert ref.append.called
-    assert controller_.lista == [m]
+    assert controller_.models == [m]
 
 
 def test_new__before():
@@ -84,14 +84,14 @@ def test_new__before():
     controller.jq = jq
     controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
     m = A(id='2', x=0, y=3)
-    controller_.lista = [m]
+    controller_.models = [m]
     m2 = A(id='3', x=0, y=3)
     controller_.new(m2)
 
     jq.assert_called_with('#container')
     jq().children.assert_called_with("[reactive_id='2']")
     assert before.called
-    assert controller_.lista == [m2, m]
+    assert controller_.models == [m2, m]
 
 
 def test_new__first():
@@ -101,7 +101,7 @@ def test_new__first():
     controller.jq = jq
     controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
     m = A(id='2', x=0, y=3)
-    controller_.lista = [m]
+    controller_.models = [m]
     m2 = A(id='3', x=0, y=3)
     controller_.new(m2)
 
@@ -115,14 +115,14 @@ def test_new__after():
     controller.jq = jq
     controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
     m = A(id='2', x=0, y=3)
-    controller_.lista = [m]
+    controller_.models = [m]
     m2 = A(id='3', x=0, y=2)
     controller_.new(m2)
 
     jq.assert_called_with('#container')
     jq().children.assert_called_with("[reactive_id='2']")
     assert after.called
-    assert controller_.lista == [m, m2]
+    assert controller_.models == [m, m2]
 
 
 def test_new__after_first():
@@ -132,8 +132,50 @@ def test_new__after_first():
     controller.jq = jq
     controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
     m = A(id='2', x=0, y=3)
-    controller_.lista = [m]
+    controller_.models = [m]
     m2 = A(id='3', x=0, y=2)
     controller_.new(m2)
 
     assert not after.called
+
+
+def test_out():
+    pass
+
+
+def test_modify_when_second_pass_to_first():
+    jq = Mock()
+    children = jq().children
+
+    controller.jq = jq
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
+    m = A(id='2', x=0, y=3)
+    m2 = A(id='3', x=0, y=2)
+    controller_.models = [m, m2]
+    m2.y = 4
+
+    controller_.modify(m2)
+
+    assert call("[reactive_id='2']") in children.mock_calls
+    assert children().remove.called
+    assert call("<div reactive_id='3'>test</div>") in jq.mock_calls #jq.assert_any_call("<div reactive_id='3'>test</div>")
+    assert controller_.models == [m2, m]
+
+
+def test_modify_when_first_pass_to_second():
+    jq = Mock()
+    children = jq().children
+
+    controller.jq = jq
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
+    m = A(id='2', x=0, y=3)
+    m2 = A(id='3', x=0, y=2)
+    controller_.models = [m, m2]
+    m.y = 1
+
+    controller_.modify(m)
+
+    assert call("[reactive_id='2']") in children.mock_calls
+    assert children().remove.called
+    assert call("<div reactive_id='3'>test</div>") in jq.mock_calls
+    assert controller_.models == [m2, m]

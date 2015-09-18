@@ -5,16 +5,19 @@ def pass_filter(filter, model):
     for key, value in filter.items():
         if key == '__collection__':
             continue
+        v = model.get(key)
+        if v is None:
+            return False
         if type(value) == int or type(value) == str:
-            if model[key] != value:
+            if v != value:
                 return False
         else:
             for op, val in value.items():
                 if op == '$gt':
-                    if model[key] <= val:
+                    if v <= val:
                         return False
                 elif op == '$lt':
-                    if model[key] > val:
+                    if v >= val:
                         return False
     return True
 
