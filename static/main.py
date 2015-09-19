@@ -18,17 +18,45 @@ DIV = html.DIV
 ws = WebSocket("ws://127.0.0.1:8888/ws")
 Model.ws = ws
 
+#helpers = {}
+
+
+#def helper(func):
+#    helpers[func.__name__] = func
+
+#    return func
+
+
+#@helper
+#def helper1():
+#    return [('x', 'desc')], filters['my_filter'](x=5, y=10)
 
 collections = {}
 collections['A'] = A
-filter = filters['my_filter'](x=5, y=10)
+#filter = filters['my_filter'](x=5, y=10)
+controllers = []
 
-container = jq('#container')
 
-first = jq('#first')
+class MyController(Controller):
+    def __init__(self, node, first=False):
+        key = [('x', 'desc')]
+        filter = filters['my_filter'](x=5, y=10)
+        super(MyController, self).__init__(key, filter, node, first)
 
-controllers = [Controller(key=[('x', 'desc')], filter=filter, node=container),
-               Controller(key=[('x', 'desc')], filter=filter, node=first, first=True)]
+#
+eachs = jq('[each]')
+for each in eachs:
+    klass = globals()[each.attr('each')]
+    if each.attr('first') == 'True':
+        controllers.append(klass(node=each, first=True))
+    else:
+        controllers.append(klass(node=each))
+#
+
+#container = jq('#container')
+#first = jq('#first')
+#controllers = [Controller(key=[('x', 'desc')], filter=filter, node=container),
+#               Controller(key=[('x', 'desc')], filter=filter, node=first, first=True)]
 
 # ##############
 

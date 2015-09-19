@@ -1,5 +1,6 @@
 from lib.filter_mongo import pass_filter
 from reactive import reactive
+import re
 
 import browser
 window = browser.window
@@ -7,18 +8,25 @@ window = browser.window
 jq = window.jQuery.noConflict(True)
 
 
-def template(id):
+def _template(id):
     return jq('#'+str(id)+'.template').html()
 
 
-def render(model, node):
+def render(model, node, template):
     dct = {k[1:]: v for k, v in model.__dict__.items() if k.startswith('_')}
-    node.html(template(node.id).format(id=model.id, **dct))
+    node.html(template.format(id=model.id, **dct))
+    attrs = re.findall('\{[a-zA-Z_09]+\}', template)
+    for attr in attrs:
+        attr = attr[1:-1]
+        getattr(model, attr)
 
 
-def makeDIV(id, model, func):
+def makeDIV(id, model, func, template):
     node = jq("<div reactive_id='"+str(id)+"'>test</div>")
-    reactive(model, func, node)
+    node.html(template)
+
+    for n in node.find("[r]"):
+        reactive(model, func, n, n.html())
     return node
 
 
@@ -69,12 +77,12 @@ class Controller(object):
         print([x.x for x in self.models])
         action = tupla[1]
         if action == 'append':
-            node = makeDIV(model.id, model, self.func)
+            node = makeDIV(model.id, model, self.func, jq('#'+str(self.node.id)+'.template').html())
 
             ref = jq('#'+str(self.node.id))
             ref.append(node)
         elif action == 'before':
-            node = makeDIV(model.id, model, self.func)
+            node = makeDIV(model.id, model, self.func, jq('#'+str(self.node.id)+'.template').html())
 
             ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
 
@@ -83,7 +91,7 @@ class Controller(object):
                 ref.remove()
         elif action == 'after':
             if not self.first:
-                node = makeDIV(model.id, model, self.func)
+                node = makeDIV(model.id, model, self.func, jq('#'+str(self.node.id)+'.template').html())
 
                 ref = jq('#'+str(self.node.id)).children("[reactive_id='"+str(tupla[2])+"']")
                 ref.after(node)
@@ -97,7 +105,7 @@ class Controller(object):
         node.remove()
         print('eliminado')
         if self.first and index == 0 and len(self.models) > 0:
-            node = makeDIV(self.models[0].id, self.models[0], self.func)
+            node = makeDIV(self.models[0].id, self.models[0], self.func, jq('#'+str(self.node.id)+'.template').html())
             ref = jq('#'+str(self.node.id))
             ref.append(node)
 
@@ -110,10 +118,10 @@ class Controller(object):
         elif self.first:
             if index == 0:
                 jq('#'+str(self.node.id)).children("[reactive_id='"+str(model.id)+"']").remove()
-                jq('#'+str(self.node.id)).append(makeDIV(self.models[0].id, self.models[0], self.func))
+                jq('#'+str(self.node.id)).append(makeDIV(self.models[0].id, self.models[0], self.func, jq('#'+str(self.node.id)+'.template').html()))
             elif tupla[0] == 0:
                 jq('#'+str(self.node.id)).children("[reactive_id='"+str(self.models[0].id)+"']").remove()
-                jq('#'+str(self.node.id)).append(makeDIV(model.id, model, self.func))
+                jq('#'+str(self.node.id)).append(makeDIV(model.id, model, self.func, jq('#'+str(self.node.id)+'.template').html()))
         else:
             print('move to ', model, tupla)
 

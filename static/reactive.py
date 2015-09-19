@@ -12,12 +12,12 @@ def consume():
         call()
 
 
-def reactive(model, func, node=None):
+def reactive(model, func, node=None, template=None):
     def helper():
         global current_call
         model.reset(helper)
         current_call = helper
-        func(model, node)
+        func(model, node, template)
         current_call = None
 
     helper()
