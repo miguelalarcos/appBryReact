@@ -25,31 +25,10 @@ filter = filters['my_filter'](x=5, y=10)
 
 container = jq('#container')
 
-node_template = jq(container.html()).removeClass('template').html()
-
-
-def hello(model, node):
-    print('id: ' + str(model.id) + ', x:' + str(model.x))
-    node.html(node_template.format(id=model.id, x=model.x))
-
-
-def hello2(model, node):
-    print('--id: ' + str(model.id) + ', x:' + str(model.x))
-    node.text('--id: ' + str(model.id) + ', x:' + str(model.x))
-
-#container = DIV(Id='container')
-#container.text = 'Contenedor'
-#document <= container
-
-#first = DIV(Id='first')
-#first.text = 'First'
-#document <= first
-
-
 first = jq('#first')
 
-controllers = [Controller(key=[('x', 'desc')], filter=filter, node=container, func=hello),
-               Controller(key=[('x', 'desc')], filter=filter, node=first, func=hello2, first=True)]
+controllers = [Controller(key=[('x', 'desc')], filter=filter, node=container),
+               Controller(key=[('x', 'desc')], filter=filter, node=first, first=True)]
 
 # ##############
 

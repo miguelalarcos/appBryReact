@@ -28,14 +28,14 @@ m = A(id='2', x=0, y=1)
 
 
 def test_index_in_list_empty():
-    controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(), func=lambda: 5)
+    controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV())
     controller.models = []
     ret = controller.indexInList(m)
     assert ret == (0, 'append')
 
 
 def test_index_in_list_before():
-    controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(), func=lambda: 5)
+    controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV())
     controller.models = [m0]
     m = A(id='2', x=1, y=1)
     ret = controller.indexInList(m)
@@ -43,7 +43,7 @@ def test_index_in_list_before():
 
 
 def test_index_in_list_before0():
-    controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(), func=lambda: 5)
+    controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV())
     controller.models = [m0]
     m = A(id='2', x=0, y=3)
     ret = controller.indexInList(m)
@@ -51,7 +51,7 @@ def test_index_in_list_before0():
 
 
 def test_index_in_list_after():
-    controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(), func=lambda: 5)
+    controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV())
     controller.models = [m0]
     m = A(id='2', x=-1, y=3)
     ret = controller.indexInList(m)
@@ -59,7 +59,7 @@ def test_index_in_list_after():
 
 
 def test_index_in_list_second_key_after_2():
-    controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(), func=lambda: 5)
+    controller = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV())
     controller.models = [m0, m1]
     ret = controller.indexInList(m)
     assert ret == (2, 'after', '1')
@@ -70,7 +70,7 @@ def test_new_append():
     ref.append = Mock()
     jq = Mock(return_value=ref)
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'))
     m = A(id='2', x=0, y=3)
     controller_.new(m)
     assert ref.append.called
@@ -82,7 +82,7 @@ def test_new__before():
     before = jq().children().before
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'))
     m = A(id='2', x=0, y=3)
     controller_.models = [m]
     m2 = A(id='3', x=0, y=3)
@@ -99,7 +99,7 @@ def test_new__first():
     remove = jq().children().remove
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), first=True)
     m = A(id='2', x=0, y=3)
     controller_.models = [m]
     m2 = A(id='3', x=0, y=3)
@@ -113,7 +113,7 @@ def test_new__after():
     after = jq().children().after
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'))
     m = A(id='2', x=0, y=3)
     controller_.models = [m]
     m2 = A(id='3', x=0, y=2)
@@ -130,7 +130,7 @@ def test_new__after_first():
     after = jq().children().after
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), first=True)
     m = A(id='2', x=0, y=3)
     controller_.models = [m]
     m2 = A(id='3', x=0, y=2)
@@ -144,7 +144,7 @@ def test_out_first():
     children = jq().children
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), first=True)
     m = A(id='2', x=0, y=3)
     controller_.models = [m]
 
@@ -162,7 +162,7 @@ def test_out_first_second_goes_to_first():
 
     controller.jq = jq
     controller.makeDIV = makeDIV
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), first=True)
     m = A(id='2', x=0, y=3)
     m2 = A(id='3', x=0, y=2)
     controller_.models = [m, m2]
@@ -180,7 +180,7 @@ def test_out_not_first():
     jq = Mock()
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'))
     m = A(id='2', x=0, y=3)
     controller_.models = [m]
 
@@ -192,7 +192,7 @@ def test_out_not_first_more_than_one():
     jq = Mock()
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'))
     m = A(id='2', x=0, y=3)
     m2 = A(id='3', x=0, y=3)
     controller_.models = [m, m2]
@@ -206,7 +206,7 @@ def test_modify_when_second_pass_to_first():
     children = jq().children
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), first=True)
     m = A(id='2', x=0, y=3)
     m2 = A(id='3', x=0, y=2)
     controller_.models = [m, m2]
@@ -225,7 +225,7 @@ def test_modify_when_first_pass_to_second():
     children = jq().children
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '', first=True)
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), first=True)
     m = A(id='2', x=0, y=3)
     m2 = A(id='3', x=0, y=2)
     controller_.models = [m, m2]
@@ -244,7 +244,7 @@ def test_modify_when_move_to__after():
     children = jq().children
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'))
     m = A(id='2', x=0, y=3)
     m2 = A(id='3', x=0, y=2)
     controller_.models = [m, m2]
@@ -264,7 +264,7 @@ def test_modify_when_move_to__before():
     children = jq().children
 
     controller.jq = jq
-    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'), func=lambda model, node: '')
+    controller_ = Controller(key=[('x', 'desc'), ('y', 'desc')], filter=filter, node=DIV(Id='container'))
     m = A(id='2', x=0, y=3)
     m2 = A(id='3', x=0, y=2)
     controller_.models = [m, m2]

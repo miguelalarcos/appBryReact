@@ -7,6 +7,15 @@ window = browser.window
 jq = window.jQuery.noConflict(True)
 
 
+def template(id):
+    return jq('#'+str(id)+'.template').html()
+
+
+def render(model, node):
+    dct = {k[1:]: v for k, v in model.__dict__.items() if k.startswith('_')}
+    node.html(template(node.id).format(id=model.id, **dct))
+
+
 def makeDIV(id, model, func):
     node = jq("<div reactive_id='"+str(id)+"'>test</div>")
     reactive(model, func, node)
@@ -16,12 +25,12 @@ def makeDIV(id, model, func):
 class Controller(object):
     controllers = []
 
-    def __init__(self, key, filter, node, func, first=False):
+    def __init__(self, key, filter, node, first=False):
         self.models = []
         self.key = key
         self.filter = filter
         self.node = node
-        self.func = func
+        self.func = render
         self.first = first
         self.__class__.controllers.append(self)
 
