@@ -1,24 +1,4 @@
-tasks = {}
-
-
-class DB(object):
-    def __init__(self, db, collection):
-        self.db = db
-        self.collection = collection
-
-    def find(self, parameters):
-        items = yield self.db[self.collection].find(parameters)
-        for item in items:
-            yield item.update({'__collection__': self.collection})
-
-    def find_one(self, id):
-        item = yield self.db[self.collection].find_one({'_id': id})
-        yield item.update({'__collection__': self.collection})
-
-
-def task(func):
-    tasks[func.__name__] = func
-    return func
+from base import DB, task
 
 
 @task

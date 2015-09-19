@@ -8,23 +8,18 @@ import json
 import random
 from reactive import Model, consume
 from controller import Controller
-from filters.filters import filters
+from filters import filters
+from models import A
 
 DIV = html.DIV
 
 ws = WebSocket("ws://127.0.0.1:8888/ws")
 Model.ws = ws
 
-class A(Model):
-    objects = {}
-
-    def __init__(self, id, **kw):
-        super(A, self).__init__(id, **kw)
-
 
 collections = {}
 collections['A'] = A
-filter = filters['0'](x=5, y=10)
+filter = filters['my_filter'](x=5, y=10)
 
 
 def hello(model, node):
@@ -101,7 +96,7 @@ sent_initial_data = False
 def send_data():
     global sent_initial_data
     if not sent_initial_data:
-        ws.send(json.dumps({'x': 5, 'y': 10, '__filter__': '0'}))
+        ws.send(json.dumps({'x': 5, 'y': 10, '__filter__': 'my_filter'}))
         sent_initial_data = True
     try:
         if random.random() < 0.5:

@@ -1,2 +1,6 @@
-filters = {}
-filters['0'] = lambda x, y: {'__collection__': 'A', 'x': {"$gt": x, "$lt": y}}
+from base import filter
+
+
+@filter('A')
+def my_filter(x, y):
+    return {'x': {"$gt": x, "$lt": y}}

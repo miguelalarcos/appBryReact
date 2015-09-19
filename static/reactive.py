@@ -9,22 +9,28 @@ execute = []
 def consume():
     while execute:
         call = execute.pop()
-        print('call()')
         call()
 
 
 def reactive(model, func, node=None):
-
     def helper():
         global current_call
-
         model.reset(helper)
-
         current_call = helper
         func(model, node)
         current_call = None
 
     helper()
+
+
+def autosuper(cls):
+    cls.objects = {}
+
+    def helper(self, id, **kw):
+        super(self.__class__, self).__init__(id, **kw)
+
+    cls.__init__ = helper
+    return cls
 
 
 class Model(object):
@@ -41,6 +47,9 @@ class Model(object):
             setattr(self, k, v)
 
         self.__class__.objects[id] = self
+
+    def validate(self):
+        return all([getattr(self, m)() for m in dir(self.__class__) if m.startswith('validate_')])
 
     def save(self):
         if len(self._dirty) == 0:
@@ -60,8 +69,8 @@ class Model(object):
         self._dep = [item for item in self._dep if item['call'] != func]
 
     def __getattr__(self, name):
-        #if current_name is not None:
-        self._dep.append({'call': current_call, 'attr': name})
+        if current_call is not None:
+            self._dep.append({'call': current_call, 'attr': name})
         return self.__dict__['_'+name]
 
     def __setattr__(self, key, value):

@@ -6,6 +6,7 @@ from static.filters.filters import filters
 import motor
 from tasks import tasks
 from static.lib.epochdate import epochargs2datetime, datetimeargs2epoch
+from validation import validate
 
 db = motor.MotorClient().test_database
 
@@ -87,7 +88,10 @@ def mongo_consumer():
                 model_id['_id'] = model_id['id']
                 del model_id['id']
                 print('yield insert')
-                yield db[collection].insert(model_id)
+                if validate(model):
+                    yield db[collection].insert(model_id)
+                else:
+                    continue
                 new = True
             elif '__deleted__' in model.keys():
                 deleted = True
@@ -96,8 +100,14 @@ def mongo_consumer():
             else:
                 model_copy = model.copy()
                 del model_copy['id']
+                del model_copy['__collection__']
                 print('yield update')
-                yield db[collection].update({'_id': model['id']}, model_copy)
+                model2validate = model_before.copy()
+                model2validate.update(model)
+                if validate(model2validate):
+                    yield db[collection].update({'_id': model['id']}, {"$set": model_copy})
+                else:
+                    continue
 
             for client in Client.clients.values():
                 for filt in client.filters.values():
