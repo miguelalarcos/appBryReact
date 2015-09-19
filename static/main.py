@@ -11,6 +11,8 @@ from controller import Controller
 from filters import filters
 from models import A
 
+jq = window.jQuery.noConflict(True)
+
 DIV = html.DIV
 
 ws = WebSocket("ws://127.0.0.1:8888/ws")
@@ -21,26 +23,33 @@ collections = {}
 collections['A'] = A
 filter = filters['my_filter'](x=5, y=10)
 
+container = jq('#container')
+
+node_template = jq(container.html()).removeClass('template').html()
+
 
 def hello(model, node):
     print('id: ' + str(model.id) + ', x:' + str(model.x))
-    node.text('id: ' + str(model.id) + ', x:' + str(model.x))
+    node.html(node_template.format(id=model.id, x=model.x))
 
 
 def hello2(model, node):
     print('--id: ' + str(model.id) + ', x:' + str(model.x))
     node.text('--id: ' + str(model.id) + ', x:' + str(model.x))
 
-container = DIV(Id='container')
-container.text = 'Contenedor'
-document <= container
+#container = DIV(Id='container')
+#container.text = 'Contenedor'
+#document <= container
 
-first = DIV(Id='first')
-first.text = 'First'
-document <= first
+#first = DIV(Id='first')
+#first.text = 'First'
+#document <= first
 
-controllers = [Controller(key=[('x', 'desc')], filter=filter, node=container, func=hello)]
-controllers.append(Controller(key=[('x', 'desc')], filter=filter, node=first, func=hello2, first=True))
+
+first = jq('#first')
+
+controllers = [Controller(key=[('x', 'desc')], filter=filter, node=container, func=hello),
+               Controller(key=[('x', 'desc')], filter=filter, node=first, func=hello2, first=True)]
 
 # ##############
 
@@ -85,9 +94,11 @@ def on_message(evt):
 # ws = WebSocket("ws://127.0.0.1:8888/ws")
 ws.bind('message', on_message)
 
-button_send = html.BUTTON()
-button_send.text = 'send random data'
-document <= button_send
+#button_send = html.BUTTON()
+#button_send.text = 'send random data'
+#document <= button_send
+
+button_send = jq('#button')
 
 
 sent_initial_data = False
