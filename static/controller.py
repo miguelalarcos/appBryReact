@@ -1,7 +1,8 @@
 from lib.filter_mongo import pass_filter
 from reactive import reactive
 import re
-
+import json
+from filters import filters
 import browser
 window = browser.window
 
@@ -31,16 +32,29 @@ def makeDIV(id, model, func, template):
 
 
 class Controller(object):
-    controllers = []
+    controllers = {}
 
-    def __init__(self, key, filter, node, first=False):
+    def __init__(self, name, key, filter, node=None, first=False):
+        self.name = name
         self.models = []
         self.key = key
-        self.filter = filter
+        name, kw = filter
+        self.filter_json = {'__filter__': name}.update(kw)
+        self.filter = filters[name](**kw)
         self.node = node
         self.func = render
         self.first = first
-        self.__class__.controllers.append(self)
+        self.__class__.controllers[name] = self
+
+    def subscribe(self, filter=None):
+        if filter is None:
+            self.ws.send(json.dumps(self.filter_json))
+        else:
+            name, kw = filter
+            self.filter = filters[name](**kw)
+            filter = {'__stop__': self.filter_json}
+            self.filter_json = {'__filter__': name}.update(kw)
+            self.ws.send(json.dumps(filter.update(self.filter_json)))
 
     def pass_filter(self, raw):
         return pass_filter(self.filter, raw)

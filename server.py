@@ -23,7 +23,15 @@ class Client(object):
         Client.clients[socket] = self
 
     def add_filter(self, name, filter):
-        self.filters[name] = filter
+        name = [name] + sorted(filter.items())
+        filt = filters[name](**filter)
+        self.filters[tuple(name)] = filt
+        return filt
+
+    def remove_filter(self, name, filter):
+        name = [name] + sorted(filter.items())
+        name = tuple(name)
+        del self.filters[name]
 
     @classmethod
     def remove_client(cls, client):
@@ -59,9 +67,13 @@ def mongo_consumer():
         if '__filter__' in item.keys():
             client_socket = item.pop('__client__')
             client = Client.clients[client_socket]
+
             name = item.pop('__filter__')
-            filt = filters[name](**item)
-            client.add_filter(name, filt)
+            if '__stop__' in item.keys():
+                stop = item.pop('__stop__')
+                client.remove_filter(name, stop)
+
+            filt = client.add_filter(name, item)
             collection = filt['__collection__']
 
             ret = yield db[collection].find(filt)

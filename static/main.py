@@ -8,57 +8,29 @@ import json
 import random
 from reactive import Model, consume
 from controller import Controller
-from filters import filters
+
 from models import A
 
 jq = window.jQuery.noConflict(True)
 
-DIV = html.DIV
+#DIV = html.DIV
 
 ws = WebSocket("ws://127.0.0.1:8888/ws")
 Model.ws = ws
-
-#helpers = {}
-
-
-#def helper(func):
-#    helpers[func.__name__] = func
-
-#    return func
-
-
-#@helper
-#def helper1():
-#    return [('x', 'desc')], filters['my_filter'](x=5, y=10)
+Controller.ws = ws
 
 collections = {}
 collections['A'] = A
-#filter = filters['my_filter'](x=5, y=10)
-controllers = []
 
+key = [('x', 'desc')]
+filter = ('my_filter', {'x': 5, 'y': 10})
+Controller('MyController', key, filter)
+Controller('MyController2', key, filter, first=True)
 
-class MyController(Controller):
-    def __init__(self, node, first=False):
-        key = [('x', 'desc')]
-        filter = filters['my_filter'](x=5, y=10)
-        super(MyController, self).__init__(key, filter, node, first)
-
-#
 eachs = jq('[each]')
 for each in eachs:
-    klass = globals()[each.attr('each')]
-    if each.attr('first') == 'True':
-        controllers.append(klass(node=each, first=True))
-    else:
-        controllers.append(klass(node=each))
-#
-
-#container = jq('#container')
-#first = jq('#first')
-#controllers = [Controller(key=[('x', 'desc')], filter=filter, node=container),
-#               Controller(key=[('x', 'desc')], filter=filter, node=first, first=True)]
-
-# ##############
+    c = Controller.controllers[each.attr('each')]
+    c.node = each
 
 
 def on_message(evt):
@@ -88,7 +60,7 @@ def on_message(evt):
                     data_[k] = v
             model = klass(**data_)
 
-        if all([c.test(model, data) for c in controllers]):
+        if all([c.test(model, data) for c in Controller.controllers.values()]):
             print('eliminamos obj de cache')
             del klass.objects[model.id]
 
@@ -114,7 +86,9 @@ sent_initial_data = False
 def send_data():
     global sent_initial_data
     if not sent_initial_data:
-        ws.send(json.dumps({'x': 5, 'y': 10, '__filter__': 'my_filter'}))
+        for c in Controller.controllers.values():
+            c.subscribe()
+        #ws.send(json.dumps({'x': 5, 'y': 10, '__filter__': 'my_filter'}))
         sent_initial_data = True
     try:
         if random.random() < 0.5:
