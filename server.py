@@ -8,6 +8,7 @@ import motor
 from tasks import tasks
 from static.lib.epochdate import epochargs2datetime, datetimeargs2epoch
 from validation import validate
+from DB import DB
 
 db = motor.MotorClient().test_database
 
@@ -63,10 +64,6 @@ def handle_filter(item):
     client = Client.clients[client_socket]
 
     name = item.pop('__filter__')
-    #if '__stop__' in item.keys():
-    #    stop = item.pop('__stop__')
-    #    client.remove_filter(name, stop)
-
     filt = client.add_filter(name, item)
     collection = filt.pop('__collection__')
 
@@ -107,7 +104,8 @@ def mongo_consumer():
         elif '__RPC__' in item.keys():
             name = item.pop('__RPC__')
             task = tasks[name]
-            task(db=db, queue=q_mongo, **item)
+            #task(db=db, queue=q_mongo, **item)
+            ioloop.IOLoop.current().spawn_callback(task, db=DB(db), queue=q_mongo, **item)
         else:
             collection = item['__collection__']
             model = item
