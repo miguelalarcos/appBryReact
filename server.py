@@ -2,7 +2,8 @@ from tornado import web, ioloop, websocket, gen
 from tornado.queues import Queue
 from static.lib.filter_mongo import pass_filter
 import json
-from static.filters.filters import filters
+from static.filters import filters
+from client import Client
 import motor
 from tasks import tasks
 from static.lib.epochdate import epochargs2datetime, datetimeargs2epoch
@@ -14,6 +15,7 @@ q_mongo = Queue()
 q_send = Queue()
 
 
+"""
 class Client(object):
     clients = {}
 
@@ -23,8 +25,8 @@ class Client(object):
         Client.clients[socket] = self
 
     def add_filter(self, name, filter):
-        name = [name] + sorted(filter.items())
         filt = filters[name](**filter)
+        name = [name] + sorted(filter.items())
         self.filters[tuple(name)] = filt
         return filt
 
@@ -35,8 +37,9 @@ class Client(object):
 
     @classmethod
     def remove_client(cls, client):
-        cls.clients.remove(client)
-        del Client.clients[client.socket]
+        del cls.clients[client.socket]
+"""
+
 
 @gen.coroutine
 def sender():
@@ -55,6 +58,26 @@ def sender():
 
 
 @gen.coroutine
+def handle_filter(item):
+    client_socket = item.pop('__client__')
+    client = Client.clients[client_socket]
+
+    name = item.pop('__filter__')
+    #if '__stop__' in item.keys():
+    #    stop = item.pop('__stop__')
+    #    client.remove_filter(name, stop)
+
+    filt = client.add_filter(name, item)
+    collection = filt.pop('__collection__')
+
+    ret = yield db[collection].find(filt)
+    if ret:
+        ret = [(client.socket, r) for r in ret]
+        yield q_send.put(ret)
+    raise gen.Return('handle_filter done')
+
+
+@gen.coroutine
 def mongo_consumer():
 
     while True:
@@ -65,21 +88,22 @@ def mongo_consumer():
         #client = Client.clients[client_socket]
 
         if '__filter__' in item.keys():
-            client_socket = item.pop('__client__')
-            client = Client.clients[client_socket]
+            yield handle_filter(item)
+            #client_socket = item.pop('__client__')
+            #client = Client.clients[client_socket]
 
-            name = item.pop('__filter__')
-            if '__stop__' in item.keys():
-                stop = item.pop('__stop__')
-                client.remove_filter(name, stop)
+            #name = item.pop('__filter__')
+            #if '__stop__' in item.keys():
+            #    stop = item.pop('__stop__')
+            #    client.remove_filter(name, stop)
 
-            filt = client.add_filter(name, item)
-            collection = filt['__collection__']
+            #filt = client.add_filter(name, item)
+            #collection = filt['__collection__']
 
-            ret = yield db[collection].find(filt)
-            if ret:
-                ret = [(client.socket, r) for r in ret]
-                yield q_send.put(ret)
+            #ret = yield db[collection].find(filt)
+            #if ret:
+            #    ret = [(client.socket, r) for r in ret]
+            #    yield q_send.put(ret)
         elif '__RPC__' in item.keys():
             name = item.pop('__RPC__')
             task = tasks[name]
