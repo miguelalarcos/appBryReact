@@ -47,6 +47,11 @@ class Controller(object):
         self.first = first
         self.__class__.controllers[name] = self
 
+    @classmethod
+    def subscribe_all(cls):
+        for c in cls.controllers.values():
+            c.subscribe()
+
     def subscribe(self, filter=None):
         if filter is None:
             self.ws.send(json.dumps(self.filter_json))

@@ -7,5 +7,5 @@ class A(Model):
     def validate_x(self):
         return type(self.x) == int and self.x < 100
 
-models = {}
-models['A'] = A
+#models = {}
+#models['A'] = A
