@@ -1,4 +1,4 @@
-from reactive import reactive, Model, consume, execute
+from ..static.reactive import reactive, Model, consume, execute
 
 
 class A(Model):
@@ -10,7 +10,7 @@ class A(Model):
 ret = None
 
 
-def h(model, node):
+def h(model, node, template):
     global ret
     ret = (model.x, model.y)
 

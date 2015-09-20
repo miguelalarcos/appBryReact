@@ -2,9 +2,9 @@ import sys
 from mock import Mock, MagicMock, call
 sys.modules['browser'] = Mock()
 
-import controller
-from controller import Controller#, DIV
-from reactive import Model
+from ..static import controller
+from ..static.controller import Controller#, DIV
+from ..static.reactive import Model
 
 
 class DIV(object):

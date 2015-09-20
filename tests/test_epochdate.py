@@ -1,4 +1,4 @@
-from epochdate import *
+from ..static.lib.epochdate import *
 from datetime import datetime
 
 

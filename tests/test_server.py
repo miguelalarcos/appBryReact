@@ -1,6 +1,6 @@
-import server
+from .. import server
 from mock import Mock, MagicMock, call
-from server import Client, handle_filter
+from ..server import Client, handle_filter
 
 server.db = MagicMock()
 db = server.db

@@ -1,4 +1,4 @@
-from filter_mongo import pass_filter
+from ..static.lib.filter_mongo import pass_filter
 
 filters = {}
 filters['0'] = lambda a, b: {'__collection__': 'A', 'x': {"$gt": a, "$lt": b}}

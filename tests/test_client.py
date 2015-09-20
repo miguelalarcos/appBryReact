@@ -1,4 +1,4 @@
-from client import Client
+from ..client import Client
 
 cl = Client('0')
 
