@@ -1,7 +1,6 @@
-from reactive import Model, autosuper
+from reactive import Model
 
 
-#@autosuper
 class A(Model):
     objects = {}
 

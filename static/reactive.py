@@ -23,16 +23,6 @@ def reactive(model, func, node=None, template=None):
     helper()
 
 
-def autosuper(cls):
-    cls.objects = {}
-
-    def helper(self, id, **kw):
-        super(self.__class__, self).__init__(id, **kw)
-
-    cls.__init__ = helper
-    return cls
-
-
 class Model(object):
     def __init__(self, id, **kw):
         if id is None:

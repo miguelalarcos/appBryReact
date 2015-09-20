@@ -1,4 +1,4 @@
-from static.models import *
+from static.models import models
 
 
 def validate(raw):

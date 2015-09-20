@@ -9,8 +9,8 @@ window = browser.window
 jq = window.jQuery.noConflict(True)
 
 
-def _template(id):
-    return jq('#'+str(id)+'.template').html()
+#def _template(id):
+#    return jq('#'+str(id)+'.template').html()
 
 
 def render(model, node, template):
@@ -27,6 +27,7 @@ def makeDIV(id, model, func, template):
     node.html(template)
 
     for n in node.find("[r]"):
+        print('llego')
         reactive(model, func, n, n.html())
     return node
 
